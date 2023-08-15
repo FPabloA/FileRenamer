@@ -1,12 +1,12 @@
 from tkinter import *
 from tkinter import filedialog
 
-def browse (window):
+def browse (window, page):
     #filename = filedialog.askopenfilename(initialdir="/", title="Select a Folder", filetypes=[("All files","*.*")])
     folder_selected = filedialog.askdirectory(initialdir=window.lastDir, title="Select a Folder")
     #window.label_file_explorer.configure(text="File Opened: "+filename)
     window.lastDir = folder_selected
-    window.label_file_explorer.configure(text="Folder Opened: "+folder_selected)
+    page.label.configure(text="Folder Opened: "+folder_selected)
 
 class MainWin:
     def __init__(self) -> None:
@@ -28,11 +28,11 @@ class MainWin:
         self.showFrame("StartPage")
 
 
-        # self.window.title("File Explorer")
-        # self.window.geometry("400x300")
-        # self.window.grid_columnconfigure((0,1,2), weight=1)
+        self.window.title("File Explorer")
+        self.window.geometry("400x300")
+        self.window.grid_columnconfigure((0,1,2), weight=1)
 
-        # self.label_file_explorer = Label(self.window, text = "Selected Dir:", fg="blue")
+        
         
         # self.button_explore = Button(self.window, text = "Browse Folders",
         #                 command = lambda: browse(self))
@@ -57,32 +57,77 @@ class MainWin:
 
     def showFrame(self, pgName):
             frame = self.frames[pgName]
+            frame.updateFrame()
             frame.tkraise()
 
 class StartPage(Frame):
     def __init__(self, parent, controller):
         Frame.__init__(self, parent)
         self.controller = controller
-        label = Label(self, text="This is the start page")
-        label.pack(side="top", fill="x", pady=10)
+        self.label = Label(self, text = "Selected Dir:", fg="blue", font = ('calibre',12,'normal'))
+        self.label.pack(side="top", fill="x", pady=10)
 
-        button1 = Button(self, text="Go to Page One",
+        button_Browse = Button(self, text = "Browse Folders",
+                        command = lambda: browse(controller, self))
+
+        button_Seq = Button(self, text="Go to Seq Naming",
                             command=lambda: controller.showFrame("SeqPage"))
-        button2 = Button(self, text="Go to Page Two",
+        button_TMDB = Button(self, text="Go to TMDB Naming",
                             command=lambda: controller.showFrame("TMDBPage"))
-        button1.pack()
-        button2.pack()
+        
+        button_Help = Button(self, text = "?",
+                     command = lambda: print("Help"))
+
+        button_Browse.pack(pady=5)
+        button_Seq.pack(pady=5)
+        button_TMDB.pack(pady=5)
+        button_Help.pack(pady=65)
+
+    def updateFrame(self):
+        print('called update start')
 
 class SeqPage(Frame):
     def __init__(self, parent, controller):
         Frame.__init__(self, parent)
         self.controller = controller
-        label = Label(self, text="This is Sequential Naming")
-        label.pack(side="top", fill="x", pady=10)
-        button = Button(self, text="Go to the start page",
+        self.label = Label(self, text="Selected Dir: ", fg="blue", font = ('calibre',12,'normal'))
+        self.label.grid(row=0, column=0,  columnspan=3, sticky=EW)
+        button_Back = Button(self, text="Back",
                            command=lambda: controller.showFrame("StartPage"))
-        button.pack()
+        
+        self.prefix = StringVar()
+        self.seq = StringVar()
 
+        label_prefix = Label(self, text="Prefix: ", font=('calibre',10, 'bold'))
+        entry_prefix = Entry(self, textvariable=self.prefix, font = ('calibre',10,'normal'))
+
+        label_seq = Label(self, text="Start from:  ", font=('calibre',10, 'bold'))
+        vcmd = (self.register(self.validateSeq))
+        entry_seq = Entry(self, textvariable=self.seq, font = ('calibre',10,'normal'), validate='all', validatecommand=(vcmd, '%P'))
+        button_preview = Button(self, text='Show Preview', command=lambda: self.updateFrame())
+
+        self.label_preview = Label(self, text="", font=('calibre',10, 'bold'))
+
+
+        label_prefix.grid(row=1, column=0)
+        entry_prefix.grid(row=1, column=1, columnspan=2, sticky=EW)
+        label_seq.grid(row=2, column=0, pady=5)
+        entry_seq.grid(row=2, column=1, sticky=EW)
+        button_preview.grid(row=2, column=2, padx=5)
+        self.label_preview.grid(row=3, column=1, sticky=EW)
+        button_Back.grid(row=4, column=0)
+    
+    def updateFrame(self):
+        print("called seq update")
+        self.label.configure(text="Folder Opened: "+self.controller.lastDir)
+        if(self.prefix.get() != ""):
+            self.label_preview.configure(text="Preview File Name: " + self.prefix.get() + "*")
+
+    def validateSeq(self, val):
+        if str.isdigit(val) or val == "":
+            return True
+        else:
+            return False
 class TMDBPage(Frame):
     def __init__(self, parent, controller):
         Frame.__init__(self, parent)

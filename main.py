@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import filedialog
+import os
 
 def browse (window, page):
     #filename = filedialog.askopenfilename(initialdir="/", title="Select a Folder", filetypes=[("All files","*.*")])
@@ -56,9 +57,12 @@ class MainWin:
         self.window.mainloop()
 
     def showFrame(self, pgName):
-            frame = self.frames[pgName]
-            frame.updateFrame()
-            frame.tkraise()
+            if(self.lastDir != '/'):
+                frame = self.frames[pgName]
+                frame.updateFrame()
+                frame.tkraise()
+            else:
+                print("please select a directory")
 
 class StartPage(Frame):
     def __init__(self, parent, controller):
@@ -108,13 +112,17 @@ class SeqPage(Frame):
 
         self.label_preview = Label(self, text="", font=('calibre',10, 'bold'))
 
+        button_Rename = Button(self, text="Rename",
+                           command=lambda: self.renameFiles())
+
 
         label_prefix.grid(row=1, column=0)
-        entry_prefix.grid(row=1, column=1, columnspan=2, sticky=EW)
+        entry_prefix.grid(row=1, column=1, columnspan=2, sticky=EW, pady=5)
         label_seq.grid(row=2, column=0, pady=5)
         entry_seq.grid(row=2, column=1, sticky=EW)
         button_preview.grid(row=2, column=2, padx=5)
-        self.label_preview.grid(row=3, column=1, sticky=EW)
+        self.label_preview.grid(row=3, column=1, sticky=EW, pady=5)
+        button_Rename.grid(row=4, column=1, sticky=EW, pady=10)
         button_Back.grid(row=4, column=0)
     
     def updateFrame(self):
@@ -128,6 +136,33 @@ class SeqPage(Frame):
             return True
         else:
             return False
+        
+    def renameFiles(self):
+        currDir = self.controller.lastDir
+        backupList = []
+        start = 1
+        if self.seq.get() != "":
+            start = int(self.seq.get())
+        for filename in os.listdir(currDir):
+            extension = os.path.splitext(filename)[1]
+            newName = self.prefix.get() + str(start) + extension
+            try:
+                os.rename(os.path.join(currDir, filename), os.path.join(currDir, newName))
+            except OSError:
+                self.rollback(backupList)
+                exit()
+            backupList.append(filename)
+            start += 1
+
+    def rollback(self, backup):
+        print("rollback called")
+        currDir = self.controller.lastDir
+        for filename in os.listdir(currDir):
+            if(len(backup) == 0):
+                break
+            os.rename(os.path.join(currDir, filename), os.path.join(currDir, backup.pop(0)))
+        
+
 class TMDBPage(Frame):
     def __init__(self, parent, controller):
         Frame.__init__(self, parent)

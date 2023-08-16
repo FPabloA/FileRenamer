@@ -9,6 +9,7 @@ def browse (window, page):
     window.lastDir = folder_selected
     page.label.configure(text="Folder Opened: "+folder_selected)
 
+#defines the parameters of the underlying tkinter window and handles frame switching
 class MainWin:
     def __init__(self) -> None:
         self.lastDir = "/"
@@ -18,6 +19,7 @@ class MainWin:
         self.container.grid_rowconfigure(0, weight=1)
         self.container.grid_columnconfigure(0, weight=1)
 
+        #creates and stores a list of frames to switch between
         self.frames = {}
         for F in (StartPage, SeqPage, TMDBPage, HelpPage):
             pgName = F.__name__
@@ -29,41 +31,24 @@ class MainWin:
         self.showFrame("StartPage")
 
 
-        self.window.title("File Explorer")
+        self.window.title("File Renamer")
         self.window.geometry("400x300")
-        self.window.grid_columnconfigure((0,1,2), weight=1)
-
-        
-        
-        # self.button_explore = Button(self.window, text = "Browse Folders",
-        #                 command = lambda: browse(self))
-        # self.button_seq = Button(self.window, text = "Sequential Naming",
-        #                 command = lambda: print("seq"))
-        # self.button_tmdb = Button(self.window, text = "TMDB Match & Name",
-        #                 command = lambda: print("TMDB"))
-        # self.button_exit = Button(self.window, text = "Exit",
-        #              command = exit)
-        # self.button_help = Button(self.window, text = "?",
-        #              command = lambda: print("Help"))
-
-        #window organization
-        # self.label_file_explorer.grid(row=0, column=1, sticky="ew", pady=10)
-        # self.button_explore.grid(row=1, column=1, pady=5)
-        # self.button_seq.grid(row=2, column=1, pady=5)
-        # self.button_tmdb.grid(row=3, column=1, pady=5)
-        # self.button_exit.grid(row=4, column=1, pady=120)
-        # self.button_help.grid(row=4, column=0, pady=120)
 
         self.window.mainloop()
 
     def showFrame(self, pgName):
+            #ensures a directory is selected before allowing the user to switch to other pages
             if(self.lastDir != '/'):
                 frame = self.frames[pgName]
                 frame.updateFrame()
                 frame.tkraise()
             else:
+                frame = self.frames["StartPage"]
+                frame.updateFrame()
+                frame.tkraise()
                 print("please select a directory")
 
+#defines and displays the features of the start page frame
 class StartPage(Frame):
     def __init__(self, parent, controller):
         Frame.__init__(self, parent)
@@ -90,6 +75,7 @@ class StartPage(Frame):
     def updateFrame(self):
         print('called update start')
 
+#defines and displays the features of the sequential naming frame
 class SeqPage(Frame):
     def __init__(self, parent, controller):
         Frame.__init__(self, parent)
@@ -99,6 +85,7 @@ class SeqPage(Frame):
         button_Back = Button(self, text="Back",
                            command=lambda: controller.showFrame("StartPage"))
         
+        #hold the contents of the prefix and start seq entry boxes
         self.prefix = StringVar()
         self.seq = StringVar()
 
@@ -125,18 +112,20 @@ class SeqPage(Frame):
         button_Rename.grid(row=4, column=1, sticky=EW, pady=10)
         button_Back.grid(row=4, column=0)
     
+    #updates the currently opened label
     def updateFrame(self):
-        print("called seq update")
         self.label.configure(text="Folder Opened: "+self.controller.lastDir)
         if(self.prefix.get() != ""):
             self.label_preview.configure(text="Preview File Name: " + self.prefix.get() + "*")
 
+    #ensures that users can only enter digits into the seq entry
     def validateSeq(self, val):
         if str.isdigit(val) or val == "":
             return True
         else:
             return False
-        
+    
+    #loops through the files of the selected directory and renames them according to the parameters set by the user
     def renameFiles(self):
         currDir = self.controller.lastDir
         backupList = []
@@ -154,6 +143,7 @@ class SeqPage(Frame):
             backupList.append(filename)
             start += 1
 
+    #if an error occurs at any point in the renaming process, revert files that were already renamed and exit
     def rollback(self, backup):
         print("rollback called")
         currDir = self.controller.lastDir
@@ -162,7 +152,7 @@ class SeqPage(Frame):
                 break
             os.rename(os.path.join(currDir, filename), os.path.join(currDir, backup.pop(0)))
         
-
+#defines and displays the features of the sequential naming frame
 class TMDBPage(Frame):
     def __init__(self, parent, controller):
         Frame.__init__(self, parent)
@@ -172,6 +162,9 @@ class TMDBPage(Frame):
         button = Button(self, text="Go to the start page",
                            command=lambda: controller.showFrame("StartPage"))
         button.pack()
+        
+    def updateFrame(self):
+        self.label.configure(text="Folder Opened: "+self.controller.lastDir)
 
 class HelpPage(Frame):
     def __init__(self, parent, controller):

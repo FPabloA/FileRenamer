@@ -157,14 +157,67 @@ class TMDBPage(Frame):
     def __init__(self, parent, controller):
         Frame.__init__(self, parent)
         self.controller = controller
-        label = Label(self, text="This is TMDB Naming")
-        label.pack(side="top", fill="x", pady=10)
-        button = Button(self, text="Go to the start page",
+        self.label = Label(self, text="Selected Dir: ", fg="blue", font = ('calibre',12,'normal'))
+        self.label.grid(row=0, column=0,  columnspan=3)
+        self.grid_columnconfigure((0,1,2), weight=1)
+
+        self.TMDBName = StringVar()
+        self.suggestions = []
+
+        label_Name = Label(self, text="TMDB Name: ", font=('calibre',10, 'bold'))
+        entry_Name = Entry(self, textvariable=self.TMDBName, font = ('calibre',10,'normal'))
+        entry_Name.bind('<KeyRelease>', self.checkkey)
+        self.lb_suggestions = Listbox(self, height=5)
+
+        label_Preview = Label(self, text="Preview: ", font=('calibre',10, 'bold'))
+        label_PrevNames = Label(self, text="...", font = ('calibre',10,'normal'))
+
+        button_TMDB = Button(self, text="TMDB Page",
+                           command=lambda: self.renameFiles())
+        button_Rename = Button(self, text="Rename",
+                           command=lambda: self.renameFiles())
+        button_Preview = Button(self, text="Preview",
+                           command=lambda: self.renameFiles())
+
+        button_Back = Button(self, text="Go to the start page",
                            command=lambda: controller.showFrame("StartPage"))
-        button.pack()
+        
+        label_Name.grid(row=1, column=0)
+        entry_Name.grid(row=1, column=1, columnspan=3, sticky=EW, pady=5, padx=10)
+        self.lb_suggestions.grid(row=2, column=1, columnspan=3, padx=10, sticky=NSEW)
+        label_Preview.grid(row=3, column=0, pady=5)
+        label_PrevNames.grid(row=3, column=1, columnspan=2)
+        button_TMDB.grid(row=4, column=0, pady=5)
+        button_Rename.grid(row=4, column=1)
+        button_Preview.grid(row=4, column=2)
+        button_Back.grid(row=5, column=0, pady=10)
+
+        self.updateLB(1)
         
     def updateFrame(self):
         self.label.configure(text="Folder Opened: "+self.controller.lastDir)
+
+    def checkkey(self, event):
+        input = self.TMDBName.get()
+
+        if input == '':
+            list = 1
+        else:
+            list = []
+            for item in self.suggestions:
+                if input.lower() in item.lower():
+                    list.append(item)
+        self.updateLB(list)
+
+    def updateLB(self, list):
+        self.lb_suggestions.delete(0, 'end')
+
+        if(list != 1):
+            for item in list:
+                self.lb_suggestions.insert('end', item)
+
+    
+            
 
 class HelpPage(Frame):
     def __init__(self, parent, controller):

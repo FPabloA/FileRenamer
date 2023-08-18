@@ -1,6 +1,11 @@
 from tkinter import *
 from tkinter import filedialog
+from tmdbv3api import TV, TMDb
 import os
+
+tmdb = TMDb()
+
+tv = TV()
 
 def browse (window, page):
     #filename = filedialog.askopenfilename(initialdir="/", title="Select a Folder", filetypes=[("All files","*.*")])
@@ -199,6 +204,7 @@ class TMDBPage(Frame):
 
     def checkkey(self, event):
         input = self.TMDBName.get()
+        self.fetchSuggestions(input)
 
         if input == '':
             list = 1
@@ -216,7 +222,12 @@ class TMDBPage(Frame):
             for item in list:
                 self.lb_suggestions.insert('end', item)
 
-    
+    def fetchSuggestions(self, input):
+        results = tv.search(input)
+        self.suggestions.clear()
+        for show in results:
+            self.suggestions.append(show.name)
+        
             
 
 class HelpPage(Frame):

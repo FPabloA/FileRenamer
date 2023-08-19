@@ -1,10 +1,11 @@
 from tkinter import *
 from tkinter import filedialog
 from tmdbv3api import TV, TMDb
+import webbrowser
 import os
 
 tmdb = TMDb()
-
+tmdb.api_key = ''
 tv = TV()
 
 def browse (window, page):
@@ -150,7 +151,6 @@ class SeqPage(Frame):
 
     #if an error occurs at any point in the renaming process, revert files that were already renamed and exit
     def rollback(self, backup):
-        print("rollback called")
         currDir = self.controller.lastDir
         for filename in os.listdir(currDir):
             if(len(backup) == 0):
@@ -167,18 +167,20 @@ class TMDBPage(Frame):
         self.grid_columnconfigure((0,1,2), weight=1)
 
         self.TMDBName = StringVar()
-        self.suggestions = []
+        self.suggestions = {}
+        self.currSelect = None
 
         label_Name = Label(self, text="TMDB Name: ", font=('calibre',10, 'bold'))
         entry_Name = Entry(self, textvariable=self.TMDBName, font = ('calibre',10,'normal'))
         entry_Name.bind('<KeyRelease>', self.checkkey)
-        self.lb_suggestions = Listbox(self, height=5)
+        self.lb_suggestions = Listbox(self, height=5, selectmode=SINGLE)
+        self.lb_suggestions.bind('<<ListboxSelect>>', self.sugSelect)
 
         label_Preview = Label(self, text="Preview: ", font=('calibre',10, 'bold'))
         label_PrevNames = Label(self, text="...", font = ('calibre',10,'normal'))
 
         button_TMDB = Button(self, text="TMDB Page",
-                           command=lambda: self.renameFiles())
+                           command=lambda: self.openPage())
         button_Rename = Button(self, text="Rename",
                            command=lambda: self.renameFiles())
         button_Preview = Button(self, text="Preview",
@@ -210,8 +212,8 @@ class TMDBPage(Frame):
             list = 1
         else:
             list = []
-            for item in self.suggestions:
-                if input.lower() in item.lower():
+            for item in self.suggestions.values():
+                if input.lower() in item.name.lower():
                     list.append(item)
         self.updateLB(list)
 
@@ -220,13 +222,22 @@ class TMDBPage(Frame):
 
         if(list != 1):
             for item in list:
-                self.lb_suggestions.insert('end', item)
+                self.lb_suggestions.insert('end', item.name)
+    
+    def sugSelect(self, event):
+        value = self.lb_suggestions.get(self.lb_suggestions.curselection())
+        self.TMDBName.set(value)
+        self.currSelect = self.suggestions[value]
+        print(self.currSelect)
 
     def fetchSuggestions(self, input):
         results = tv.search(input)
         self.suggestions.clear()
         for show in results:
-            self.suggestions.append(show.name)
+            self.suggestions[show.name] = show
+
+    def openPage(self):
+        webbrowser.open('https://www.themoviedb.org/tv/' + str(self.currSelect.id))
         
             
 

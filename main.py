@@ -1,12 +1,14 @@
 from tkinter import *
+from tkinter import _setit
 from tkinter import filedialog
-from tmdbv3api import TV, TMDb
+from tmdbv3api import TV, TMDb, Season
 import webbrowser
 import os
 
 tmdb = TMDb()
 tmdb.api_key = ''
 tv = TV()
+season = Season()
 
 def browse (window, page):
     #filename = filedialog.askopenfilename(initialdir="/", title="Select a Folder", filetypes=[("All files","*.*")])
@@ -169,6 +171,7 @@ class TMDBPage(Frame):
         self.TMDBName = StringVar()
         self.suggestions = {}
         self.currSelect = None
+        self.seasonSelect = IntVar()
 
         label_Name = Label(self, text="TMDB Name: ", font=('calibre',10, 'bold'))
         entry_Name = Entry(self, textvariable=self.TMDBName, font = ('calibre',10,'normal'))
@@ -176,27 +179,23 @@ class TMDBPage(Frame):
         self.lb_suggestions = Listbox(self, height=5, selectmode=SINGLE)
         self.lb_suggestions.bind('<<ListboxSelect>>', self.sugSelect)
 
-        label_Preview = Label(self, text="Preview: ", font=('calibre',10, 'bold'))
-        label_PrevNames = Label(self, text="...", font = ('calibre',10,'normal'))
+        label_Seasons = Label(self, text="Seasons: ", font=('calibre',10, 'bold'))
+        self.spin_Seasons = Spinbox(self, from_=1, to=1, textvariable=self.seasonSelect)
 
         button_TMDB = Button(self, text="TMDB Page",
                            command=lambda: self.openPage())
         button_Rename = Button(self, text="Rename",
                            command=lambda: self.renameFiles())
-        button_Preview = Button(self, text="Preview",
-                           command=lambda: self.renameFiles())
-
         button_Back = Button(self, text="Go to the start page",
                            command=lambda: controller.showFrame("StartPage"))
         
         label_Name.grid(row=1, column=0)
         entry_Name.grid(row=1, column=1, columnspan=3, sticky=EW, pady=5, padx=10)
         self.lb_suggestions.grid(row=2, column=1, columnspan=3, padx=10, sticky=NSEW)
-        label_Preview.grid(row=3, column=0, pady=5)
-        label_PrevNames.grid(row=3, column=1, columnspan=2)
+        label_Seasons.grid(row=3, column=0, pady=5)
+        self.spin_Seasons.grid(row=3, column=1, pady=5, padx=9, sticky=W)
         button_TMDB.grid(row=4, column=0, pady=5)
-        button_Rename.grid(row=4, column=1)
-        button_Preview.grid(row=4, column=2)
+        button_Rename.grid(row=4, column=2)
         button_Back.grid(row=5, column=0, pady=10)
 
         self.updateLB(1)
@@ -228,7 +227,10 @@ class TMDBPage(Frame):
         value = self.lb_suggestions.get(self.lb_suggestions.curselection())
         self.TMDBName.set(value)
         self.currSelect = self.suggestions[value]
+        details = tv.details(self.currSelect.id)
+        self.spin_Seasons.config(from_= 1, to=details["number_of_seasons"])
         print(self.currSelect)
+        
 
     def fetchSuggestions(self, input):
         results = tv.search(input)

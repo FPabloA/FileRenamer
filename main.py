@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import _setit
 from tkinter import filedialog
 from tmdbv3api import TV, TMDb, Season
+from pathvalidate import sanitize_filename
 import webbrowser
 import os
 
@@ -140,7 +141,7 @@ class SeqPage(Frame):
         start = 1
         if self.seq.get() != "":
             start = int(self.seq.get())
-        for filename in os.listdir(currDir):
+        for filename in sorted(os.listdir(currDir), key=len):
             extension = os.path.splitext(filename)[1]
             newName = self.prefix.get() + str(start) + extension
             try:
@@ -154,7 +155,7 @@ class SeqPage(Frame):
     #if an error occurs at any point in the renaming process, revert files that were already renamed and exit
     def rollback(self, backup):
         currDir = self.controller.lastDir
-        for filename in os.listdir(currDir):
+        for filename in sorted(os.listdir(currDir), key=len):
             if(len(backup) == 0):
                 break
             os.rename(os.path.join(currDir, filename), os.path.join(currDir, backup.pop(0)))
@@ -185,7 +186,7 @@ class TMDBPage(Frame):
         button_TMDB = Button(self, text="TMDB Page",
                            command=lambda: self.openPage())
         button_Rename = Button(self, text="Rename",
-                           command=lambda: self.renameFiles())
+                           command=lambda: self.TMDbRename())
         button_Back = Button(self, text="Go to the start page",
                            command=lambda: controller.showFrame("StartPage"))
         
@@ -229,7 +230,7 @@ class TMDBPage(Frame):
         self.currSelect = self.suggestions[value]
         details = tv.details(self.currSelect.id)
         self.spin_Seasons.config(from_= 1, to=details["number_of_seasons"])
-        print(self.currSelect)
+        #print(self.currSelect)
         
 
     def fetchSuggestions(self, input):
@@ -240,6 +241,37 @@ class TMDBPage(Frame):
 
     def openPage(self):
         webbrowser.open('https://www.themoviedb.org/tv/' + str(self.currSelect.id))
+
+    def TMDbRename(self):
+        currDir = self.controller.lastDir
+        self.seasonSelect = self.spin_Seasons.get()
+        show_season = season.details(self.currSelect.id, self.seasonSelect)
+        tmdbNames = []
+        backupList = []
+
+        for item in show_season.episodes:
+            tmdbNames.append(sanitize_filename(self.TMDBName.get() + " - " + str(self.seasonSelect) + "x" + str(item.episode_number) + " - " + item.name))
+        
+        for filename in sorted(os.listdir(currDir), key=len):
+            extension = os.path.splitext(filename)[1]
+            if len(tmdbNames) == 0:
+                break
+            newName = tmdbNames.pop(0) + extension
+            try:
+                os.rename(os.path.join(currDir, filename), os.path.join(currDir, newName))
+            except OSError as error:
+                print(error)
+                self.rollback(backupList)
+                exit()
+            backupList.append(filename)
+    
+    def rollback(self, backup):
+        currDir = self.controller.lastDir
+        for filename in sorted(os.listdir(currDir), key=len):
+            if(len(backup) == 0):
+                break
+            os.rename(os.path.join(currDir, filename), os.path.join(currDir, backup.pop(0)))
+        
         
             
 
